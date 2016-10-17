@@ -3,8 +3,8 @@ params = {
     'url_stats' : 'https://www.root-me.org/{}?inc=statistiques&lang=en',
     'url_fbctf' : 'https://127.0.0.1/index.php?{}',
     'cookies_rootme' : {
-        'spip_session': '33919_503b882ebd3e45897825a4ba917362c7',
-        'PHPSESSID': 'qlfupok6091ch89dl3o5ch27v5',
+        'spip_session': '...',
+        'PHPSESSID': '...',
     },
     'cookies_fbctf' : {
         'Leaderboard':'close',
