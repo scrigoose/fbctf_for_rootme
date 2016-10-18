@@ -5,67 +5,64 @@ import config
 from random import shuffle
 
 
-def get_users_from_db():
-    print("Retriving users from db")
+def open_connection():
     cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
     cursor = cnx.cursor()
+    return cnx, cursor
+
+
+def close_connection(cnx, cursor):
+    cursor.close()
+    cnx.close()
+
+
+def get_users_from_db():
+    print("Retriving users from db")
+    cnx, cursor = open_connection()
     query = "SELECT name FROM teams;"
     cursor.execute(query)
     q_res = cursor.fetchall()
     users = [u[0] for u in q_res]
-    cursor.close()
-    cnx.close()
+    close_connection(cnx, cursor)
     return users
 
 
-def get_user_id(username):
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
-    query = "SELECT id FROM teams WHERE name='{}'".format(username)
+def db_value_getter(query):
+    cnx, cursor = open_connection()
     cursor.execute(query)
-    uid = cursor.fetchall()
-    cursor.close()
-    cnx.close()
-    return uid[0][0] if uid else None
+    data = cursor.fetchall()
+    close_connection(cnx, cursor)
+    return data[0][0] if data else None
+
+
+def get_user_id(username):
+    return db_value_getter("SELECT id FROM teams WHERE name='{}'".format(username))
 
 
 def get_level_id(level):
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
-    query = "SELECT id FROM levels WHERE title='{}'".format(level)
-    cursor.execute(query)
-    uid = cursor.fetchall()
-    cursor.close()
-    cnx.close()
-    return uid[0][0] if uid else None
+    return db_value_getter("SELECT id FROM levels WHERE title='{}'".format(level))
 
 
 def get_level_points(level):
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
-    query = "SELECT points FROM levels WHERE title='{}'".format(level)
-    cursor.execute(query)
-    uid = cursor.fetchall()
-    cursor.close()
-    cnx.close()
-    return uid[0][0] if uid else None
+    return db_value_getter("SELECT points FROM levels WHERE title='{}'".format(level))
+
+
+def get_category_id(cat):
+    return db_value_getter("SELECT id FROM categories WHERE category = '{}';".format(cat))
 
 
 def is_resolve_logged(level, uid):
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
+    cnx, cursor = open_connection()
     query = "SELECT * FROM scores_log WHERE team_id='{}' AND level_id='{}'".format(uid, level)
     cursor.execute(query)
     match = cursor.fetchall()
-    cursor.close()
-    cnx.close()
+    close_connection(cnx, cursor)
     return True if match else False
 
 
 def update_scores_in_db(scores):
     print("Updating db")
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
+    cnx, cursor = open_connection()
     for score in scores:
         query = "UPDATE teams SET points={} WHERE name='{}';".format(score.points, score.username)
         res = cursor.execute(query)
@@ -83,35 +80,22 @@ def update_scores_in_db(scores):
                     data = (resolved_date, user_id, points, level_id)
                     cursor.execute(query, data)
                     cnx.commit()
-    cursor.close()
-    cnx.close()
+    close_connection(cnx, cursor)
 
 
-def get_category_id(cat):
-    print('Getting category id for {}'.format(cat))
-    cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-    cursor = cnx.cursor()
-    query = "SELECT id FROM categories WHERE category = '{}';".format(cat)
-    cursor.execute(query)
-    q_res = cursor.fetchall()
-    cursor.close()
-    cnx.close()
-    return q_res[0][0] if q_res else None
 
 
 def create_categories_db():
     for cat in challenges.categories:
         if not get_category_id(cat):
             print("Creating category {}".format(cat))
-            cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-            cursor = cnx.cursor()
+            cnx, cursor = open_connection()
             query = ("INSERT INTO categories (category, protected, created_ts)"
                 " VALUES (%s, 0, %s);")
             data = (cat, time.strftime('%Y-%m-%d %H:%M:%S'))
             cursor.execute(query, data)
             cnx.commit()
-            cursor.close()
-            cnx.close()
+            close_connection(cnx, cursor)
         else:
             print("Category {} already exists".format(cat))
 
@@ -119,15 +103,13 @@ def create_categories_db():
 def create_flag_db(title, descr, country, cat, points):
     if not get_level_id(title):
         print('Creating level: {}'.format(title))
-        cnx = mysql.connector.connect(user=config.params['db_user'], password=config.params['db_pass'], database=config.params['database'])
-        cursor = cnx.cursor()
+        cnx, cursor = open_connection()
         query = ("INSERT INTO levels (active, type, title, description, entity_id, category_id, points, bonus, bonus_dec, bonus_fix, flag, hint, penalty, created_ts)"
             " VALUES (1, 'flag', %s, %s, %s, %s, %s, 0, 0, 0, %s, '', 0, %s);")
         data = (title, descr, country, cat, points, config.params['flag_key'], time.strftime('%Y-%m-%d %H:%M:%S'))
         cursor.execute(query, data)
         cnx.commit()
-        cursor.close()
-        cnx.close()
+        close_connection(cnx, cursor)
     else:
         print("Level {} already exists".format(title))
 
