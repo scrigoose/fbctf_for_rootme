@@ -1,9 +1,10 @@
 params = {
     'url_rootme' : 'https://www.root-me.org/{}?lang=en',
     'url_stats' : 'https://www.root-me.org/{}?inc=statistiques&lang=en',
+    'url_search' : 'https://www.root-me.org/?page=recherche&lang=en&recherche={}',
     'proxies' : {
-        'http': 'http://10.144.1.10:8080',
-        'https': 'http://10.144.1.10:8080',
+        #'http': 'http://10.144.1.10:8080',
+        #'https': 'http://10.144.1.10:8080',
     },
     'db_user' : 'ctf',
     'db_pass' : 'ctf',
